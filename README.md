@@ -1,24 +1,31 @@
 # Cipher 🔐
-A simple computer app to encrypt or decrypt messages 
 
-**This app is considered Stable now**
+A simple app to encrypt and decrypt messages 
 
-# Requirements to install
-A computer
+**IMPORTANT:** This app does not currently save encryption keys across sessions, meaning  
+that any data encrypted will be lost **forever** after you close the app.
 
-Python 3
+Other severe issues may be present and please do avoid using it for any critical purposes.
 
-Basic terminal knowlege
-# Installation (Linux & Mac)
-Download the latest release to your `Downloads` Folder
+## Prerequisites
 
-Open the Terminal and navigate to your `Downloads` Folder
+* A computer
+* Python
+* Basic CLI knowlege
 
-Run `python3 cipher.py` to start the app
+## Installation
 
-# Installation (Windows)
-Download the latest release to your `Downloads`
+### UNIX
 
-Double click the file to execute it
-# Issues
+1. Download the latest release to your `~/Downloads` folder
+2. Open a Terminal and navigate to your `~/Downloads` folder
+3. Execute `python3 cipher.py` to start the app
+
+### Windows
+
+Download the latest release to your `Downloads`.
+Double click the file to execute it.
+
+## Issues
+
 Please report any issues or suggestions by opening an issue
