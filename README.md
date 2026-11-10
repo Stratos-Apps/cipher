@@ -1,12 +1,6 @@
 # Cipher 🔐
 
 A simple app to encrypt and decrypt messages 
-
-**IMPORTANT:** This app does not currently save encryption keys across sessions, meaning  
-that any data encrypted will be lost **forever** after you close the app.
-
-Other severe issues may be present and please do avoid using it for any critical purposes.
-
 ## Prerequisites
 
 * A computer
