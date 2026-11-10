@@ -1,57 +1,106 @@
-from cryptography.fernet import Fernet
-from tkinter import messagebox, simpledialog, Tk
+from pathlib import Path
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+
 import pyperclip
+from cryptography.fernet import Fernet, InvalidToken
 
 
-def encrypt_with_cryptography(message, cipher_suite):
-    encrypted_message = cipher_suite.encrypt(message.encode())
-    return encrypted_message.decode()
+KEY_FILE = Path.home() / ".my_encryption_app_key"
 
 
-def decrypt_with_cryptography(encrypted_message, cipher_suite):
-    decrypted_message = cipher_suite.decrypt(encrypted_message.encode())
-    return decrypted_message.decode()
+def load_or_create_key():
+    """Load the saved Fernet key, or create and save one on first run."""
+    if KEY_FILE.exists():
+        key = KEY_FILE.read_bytes()
+        # Validate that the saved file contains a usable Fernet key.
+        Fernet(key)
+        return key
+
+    key = Fernet.generate_key()
+    KEY_FILE.write_bytes(key)
+
+    # Restrict file access on Unix-like systems.
+    try:
+        KEY_FILE.chmod(0o600)
+    except OSError:
+        pass
+
+    return key
 
 
-def copy_to_clipboard(message):
-    pyperclip.copy(message)
-    messagebox.showinfo("Success", "Message copied to clipboard!")
+def encrypt_message(message, cipher_suite):
+    return cipher_suite.encrypt(message.encode("utf-8")).decode("ascii")
 
 
-def get_task():
-    task = simpledialog.askstring("Task", "Do you want to encrypt or decrypt?")
-    return task
-
-
-def get_message():
-    message = simpledialog.askstring("Message", "Enter the secret message: ")
-    return message
+def decrypt_message(encrypted_message, cipher_suite):
+    return cipher_suite.decrypt(encrypted_message.encode("ascii")).decode("utf-8")
 
 
 def main():
-    root = Tk()
+    root = tk.Tk()
+    root.withdraw()  # Hide the otherwise empty Tkinter window.
 
-    encryption_key = Fernet.generate_key()
-    cipher_suite = Fernet(encryption_key)
+    try:
+        cipher_suite = Fernet(load_or_create_key())
+    except (OSError, ValueError) as error:
+        messagebox.showerror("Key error", f"Could not load or create the key:\n{error}")
+        root.destroy()
+        return
 
     while True:
-        task = get_task()
-        if task == "encrypt":
-            message = get_message()
-            encrypted = encrypt_with_cryptography(message, cipher_suite)
-            messagebox.showinfo("Ciphertext of the secret message is: ", encrypted)
-            copy_choice = messagebox.askyesno(
-                "Copy?", "Do you want to copy this to clipboard?"
-            )
-            if copy_choice:
-                copy_to_clipboard(encrypted)
-        elif task == "decrypt":
-            message = get_message()
-            decrypted = decrypt_with_cryptography(message, cipher_suite)
-            messagebox.showinfo("Plaintext of the secret message is: ", decrypted)
-        else:
+        task = simpledialog.askstring(
+            "Task",
+            "Do you want to encrypt or decrypt? (type 'encrypt' or 'decrypt')",
+            parent=root,
+        )
+
+        if task is None:
             break
-        root.mainloop()
+
+        task = task.strip().lower()
+
+        if task not in {"encrypt", "decrypt"}:
+            messagebox.showinfo("Finished", "Choose encrypt or decrypt to continue.")
+            continue
+
+        message = simpledialog.askstring(
+            "Message",
+            "Enter the secret message:",
+            parent=root,
+        )
+
+        if message is None:
+            continue
+
+        try:
+            if task == "encrypt":
+                result = encrypt_message(message, cipher_suite)
+                messagebox.showinfo("Ciphertext", result, parent=root)
+
+                if messagebox.askyesno(
+                    "Copy?",
+                    "Do you want to copy the ciphertext to the clipboard?",
+                    parent=root,
+                ):
+                    pyperclip.copy(result)
+                    messagebox.showinfo(
+                        "Success", "Ciphertext copied to clipboard!", parent=root
+                    )
+            else:
+                result = decrypt_message(message.strip(), cipher_suite)
+                messagebox.showinfo("Plaintext", result, parent=root)
+
+        except InvalidToken:
+            messagebox.showerror(
+                "Decryption failed",
+                "This ciphertext is invalid or was encrypted with a different key.",
+                parent=root,
+            )
+        except Exception as error:
+            messagebox.showerror("Error", str(error), parent=root)
+
+    root.destroy()
 
 
 if __name__ == "__main__":
